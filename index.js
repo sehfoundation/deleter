@@ -26,14 +26,13 @@ app.get('/health', (req, res) => {
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.GuildMessages
     ]
 });
 
 async function cleanUserMessages(interaction, targetUserId, channelId = null) {
     try {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: [4096] });
         
         const guild = interaction.guild;
         const targetUser = await client.users.fetch(targetUserId).catch(() => null);
@@ -157,8 +156,6 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
 
 async function cleanAllUserMessages(interaction, targetUserId, channelId = null) {
     try {
-        await interaction.deferReply({ ephemeral: true });
-        
         const guild = interaction.guild;
         const targetUser = await client.users.fetch(targetUserId).catch(() => null);
         
@@ -385,7 +382,7 @@ client.on('interactionCreate', async (interaction) => {
     if (!hasManageMessages && !isAllowedUser) {
         return await interaction.reply({
             content: 'У вас немає прав для використання цієї команди! Потрібні права **Manage Messages** або бути в списку дозволених користувачів.',
-            ephemeral: true
+            flags: [4096]
         });
     }
 
@@ -398,21 +395,21 @@ client.on('interactionCreate', async (interaction) => {
         if (!/^\d{17,19}$/.test(targetUserId)) {
             return await interaction.reply({
                 content: 'Невірний формат ID користувача! ID повинен містити 17-19 цифр.',
-                ephemeral: true
+                flags: [4096]
             });
         }
 
         if (targetUserId === client.user.id) {
             return await interaction.reply({
                 content: 'Неможливо видалити повідомлення самого бота!',
-                ephemeral: true
+                flags: [4096]
             });
         }
 
         if (targetUserId === interaction.user.id) {
             return await interaction.reply({
                 content: 'Використовуйте стандартні засоби Discord для видалення власних повідомлень!',
-                ephemeral: true
+                flags: [4096]
             });
         }
 
@@ -426,21 +423,21 @@ client.on('interactionCreate', async (interaction) => {
         if (!/^\d{17,19}$/.test(targetUserId)) {
             return await interaction.reply({
                 content: 'Невірний формат ID користувача! ID повинен містити 17-19 цифр.',
-                ephemeral: true
+                flags: [4096]
             });
         }
 
         if (targetUserId === client.user.id) {
             return await interaction.reply({
                 content: 'Неможливо видалити повідомлення самого бота!',
-                ephemeral: true
+                flags: [4096]
             });
         }
 
         if (targetUserId === interaction.user.id) {
             return await interaction.reply({
                 content: 'Використовуйте стандартні засоби Discord для видалення власних повідомлень!',
-                ephemeral: true
+                flags: [4096]
             });
         }
 
@@ -459,7 +456,10 @@ client.on('interactionCreate', async (interaction) => {
                 Продовжити?
             `);
 
-        await interaction.reply({ embeds: [warningEmbed], ephemeral: true });
+        await interaction.reply({ 
+            embeds: [warningEmbed], 
+            flags: [4096]
+        });
         
         await new Promise(resolve => setTimeout(resolve, 3000));
         
@@ -499,7 +499,7 @@ client.on('interactionCreate', async (interaction) => {
             )
             .setTimestamp();
 
-        await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [infoEmbed], flags: [4096] });
     }
 });
 
