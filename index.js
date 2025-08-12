@@ -30,7 +30,7 @@ const client = new Client({
     ]
 });
 
-async function cleanUserMessages(interaction, targetUserId, channelId = null) {
+async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
     try {
         await interaction.deferReply({ flags: [4096] });
         
@@ -45,8 +45,8 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
 
         let deletedCount = 0;
         let channelsProcessed = 0;
-        const channels = channelId ? 
-            [guild.channels.cache.get(channelId)] : 
+        const channels = channelIds.length > 0 ? 
+            channelIds.map(id => guild.channels.cache.get(id)).filter(Boolean) : 
             guild.channels.cache.filter(channel => 
                 channel.isTextBased() && 
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
@@ -55,7 +55,7 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
         const progressEmbed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle('Швидке видалення повідомлень...')
-            .setDescription(`Початок видалення повідомлень користувача **${targetUser.tag}** (тільки < 14 днів)${channelId ? ` в каналі <#${channelId}>` : ' у всіх каналах'}`);
+            .setDescription(`Початок видалення повідомлень користувача **${targetUser.tag}** (тільки < 14 днів)${channelIds.length > 0 ? ` в каналах: ${channelIds.map(id => `<#${id}>`).join(', ')}` : ' у всіх каналах'}`);
         
         await interaction.editReply({ embeds: [progressEmbed] });
 
@@ -133,7 +133,7 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
                 **Користувач:** ${targetUser.tag} (${targetUser.id})
                 **Видалено повідомлень:** ${deletedCount}
                 **Оброблено каналів:** ${channelsProcessed}
-                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
+                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
                 
                 *Використано bulk delete API (тільки повідомлення < 14 днів)*
             `)
@@ -155,7 +155,7 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
     }
 }
 
-async function cleanAllUserMessages(interaction, targetUserId, channelId = null) {
+async function cleanAllUserMessages(interaction, targetUserId, channelIds = []) {
     try {
         const guild = interaction.guild;
         const targetUser = await client.users.fetch(targetUserId).catch(() => null);
@@ -169,8 +169,8 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
         let deletedCount = 0;
         let channelsProcessed = 0;
         let oldMessagesCount = 0;
-        const channels = channelId ? 
-            [guild.channels.cache.get(channelId)] : 
+        const channels = channelIds.length > 0 ? 
+            channelIds.map(id => guild.channels.cache.get(id)).filter(Boolean) : 
             guild.channels.cache.filter(channel => 
                 channel.isTextBased() && 
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
@@ -179,7 +179,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
         const progressEmbed = new EmbedBuilder()
             .setColor('#FF6B35')
             .setTitle('Повне видалення повідомлень...')
-            .setDescription(`Початок видалення ВСІХ повідомлень користувача **${targetUser.tag}** (включаючи старіші за 14 днів)${channelId ? ` в каналі <#${channelId}>` : ' у всіх каналах'}\n**Це може зайняти багато часу!**`);
+            .setDescription(`Початок видалення ВСІХ повідомлень користувача **${targetUser.tag}** (включаючи старіші за 14 днів)${channelIds.length > 0 ? ` в каналах: ${channelIds.map(id => `<#${id}>`).join(', ')}` : ' у всіх каналах'}\n**Це може зайняти багато часу!**`);
         
         await interaction.editReply({ embeds: [progressEmbed] });
 
@@ -255,7 +255,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
                                 **Видалено:** ${deletedCount} повідомлень
                                 **Старих повідомлень:** ${oldMessagesCount}
                                 **Поточний канал:** ${channel.name}
-                                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
+                                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
                                 
                                 *Процес триває...*
                             `);
@@ -283,7 +283,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
                 **Старих повідомлень (>14 днів):** ${oldMessagesCount}
                 **Нових повідомлень (<14 днів):** ${deletedCount - oldMessagesCount}
                 **Оброблено каналів:** ${channelsProcessed}
-                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
+                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
                 
                 *Використано комбіновану стратегію: bulk delete + індивідуальне видалення*
             `)
@@ -337,9 +337,9 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('Конкретний канал (якщо не вказано - всі канали)')
+        .addStringOption(option =>
+            option.setName('channels')
+                .setDescription('ID каналів через кому (без пробілів). Приклад: 123,456,789. Пусто = всі канали')
                 .setRequired(false)
         ),
     
@@ -351,9 +351,9 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('Конкретний канал (якщо не вказано - всі канали)')
+        .addStringOption(option =>
+            option.setName('channels')
+                .setDescription('ID каналів через кому (без пробілів). Приклад: 123,456,789. Пусто = всі канали')
                 .setRequired(false)
         ),
     
@@ -421,7 +421,11 @@ client.on('interactionCreate', async (interaction) => {
     
     else if (commandName === 'cleanall') {
         const targetUserId = interaction.options.getString('userid');
-        const targetChannel = interaction.options.getChannel('channel');
+        const channelsInput = interaction.options.getString('channels');
+        
+        const channelIds = channelsInput ? 
+            channelsInput.split(',').map(id => id.trim()).filter(id => /^\d{17,19}$/.test(id)) : 
+            [];
         
         if (!/^\d{17,19}$/.test(targetUserId)) {
             return await interaction.reply({
@@ -454,7 +458,7 @@ client.on('interactionCreate', async (interaction) => {
                 - Повідомлення новіші за 14 днів (швидко)
                 - Повідомлення старіші за 14 днів (повільно)
                 
-                **Область:** ${targetChannel ? `<#${targetChannel.id}>` : 'Всі канали'}
+                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
                 **Процес може зайняти дуже багато часу!**
                 
                 Продовжити?
@@ -467,7 +471,7 @@ client.on('interactionCreate', async (interaction) => {
         
         await new Promise(resolve => setTimeout(resolve, 3000));
         
-        await cleanAllUserMessages(interaction, targetUserId, targetChannel?.id);
+        await cleanAllUserMessages(interaction, targetUserId, channelIds);
     }
     
     else if (commandName === 'clear-info') {
@@ -478,11 +482,11 @@ client.on('interactionCreate', async (interaction) => {
             .addFields(
                 {
                     name: '/clean',
-                    value: '**Швидке видалення** повідомлень молодших за 14 днів\n- Використовує bulk delete API\n- Дуже швидко\n- Обмеження Discord API'
+                    value: '**Швидке видалення** повідомлень молодших за 14 днів\n- Використовує bulk delete API\n- Дуже швидко\n- Обмеження Discord API\n- Параметр channels: ID каналів через кому'
                 },
                 {
                     name: '/cleanall',
-                    value: '**Повне видалення** ВСІХ повідомлень користувача\n- Видаляє і старі (>14 днів), і нові (<14 днів)\n- Повільно для старих повідомлень\n- Може зайняти багато часу'
+                    value: '**Повне видалення** ВСІХ повідомлень користувача\n- Видаляє і старі (>14 днів), і нові (<14 днів)\n- Повільно для старих повідомлень\n- Може зайняти багато часу\n- Параметр channels: ID каналів через кому'
                 },
                 {
                     name: '/clear-info',
@@ -498,7 +502,7 @@ client.on('interactionCreate', async (interaction) => {
                 },
                 {
                     name: 'Рекомендації',
-                    value: '- Використовуйте `/clean` для швидкого видалення\n- Використовуйте `/cleanall` тільки якщо потрібно видалити старі повідомлення\n- `/cleanall` може працювати годинами для активних користувачів'
+                    value: '- Використовуйте `/clean` для швидкого видалення\n- Використовуйте `/cleanall` тільки якщо потрібно видалити старі повідомлення\n- `/cleanall` може працювати годинами для активних користувачів\n- Формат каналів: `123456789,987654321,555666777` (без пробілів)\n- Пустий параметр channels = всі канали'
                 }
             )
             .setTimestamp();
