@@ -43,7 +43,8 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
             });
         }
 
-        console.log(`CLEAN: channelIds = ${JSON.stringify(channelIds)}`);
+        console.log(`CLEAN: received channelIds = ${JSON.stringify(channelIds)}`);
+        console.log(`CLEAN: channelIds length = ${channelIds.length}`);
 
         let deletedCount = 0;
         let channelsProcessed = 0;
@@ -54,7 +55,9 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
             ).values();
 
-        console.log(`CLEAN: processing ${Array.from(channels).length} channels`);
+        const channelsArray = Array.from(channels);
+        console.log(`CLEAN: processing ${channelsArray.length} channels`);
+        console.log(`CLEAN: channel names: ${channelsArray.map(c => c.name).join(', ')}`);
 
         const progressEmbed = new EmbedBuilder()
             .setColor('#FFD700')
@@ -65,8 +68,10 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
 
         const fourteenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
 
-        for (const channel of channels) {
+        for (const channel of channelsArray) {
             if (!channel || !channel.isTextBased()) continue;
+            
+            console.log(`CLEAN: processing channel ${channel.name} (${channel.id})`);
             
             try {
                 const permissions = channel.permissionsFor(guild.members.me);
