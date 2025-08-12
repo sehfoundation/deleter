@@ -55,7 +55,7 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
         const progressEmbed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle('Швидке видалення повідомлень...')
-            .setDescription(`Початок видалення повідомлень користувача **${targetUser.tag}** (тільки < 14 днів)`);
+            .setDescription(`Початок видалення повідомлень користувача **${targetUser.tag}** (тільки < 14 днів)${channelId ? ` в каналі <#${channelId}>` : ' у всіх каналах'}`);
         
         await interaction.editReply({ embeds: [progressEmbed] });
 
@@ -133,6 +133,7 @@ async function cleanUserMessages(interaction, targetUserId, channelId = null) {
                 **Користувач:** ${targetUser.tag} (${targetUser.id})
                 **Видалено повідомлень:** ${deletedCount}
                 **Оброблено каналів:** ${channelsProcessed}
+                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
                 
                 *Використано bulk delete API (тільки повідомлення < 14 днів)*
             `)
@@ -178,7 +179,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
         const progressEmbed = new EmbedBuilder()
             .setColor('#FF6B35')
             .setTitle('Повне видалення повідомлень...')
-            .setDescription(`Початок видалення ВСІХ повідомлень користувача **${targetUser.tag}** (включаючи старіші за 14 днів)\n**Це може зайняти багато часу!**`);
+            .setDescription(`Початок видалення ВСІХ повідомлень користувача **${targetUser.tag}** (включаючи старіші за 14 днів)${channelId ? ` в каналі <#${channelId}>` : ' у всіх каналах'}\n**Це може зайняти багато часу!**`);
         
         await interaction.editReply({ embeds: [progressEmbed] });
 
@@ -254,6 +255,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
                                 **Видалено:** ${deletedCount} повідомлень
                                 **Старих повідомлень:** ${oldMessagesCount}
                                 **Поточний канал:** ${channel.name}
+                                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
                                 
                                 *Процес триває...*
                             `);
@@ -281,6 +283,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelId = null)
                 **Старих повідомлень (>14 днів):** ${oldMessagesCount}
                 **Нових повідомлень (<14 днів):** ${deletedCount - oldMessagesCount}
                 **Оброблено каналів:** ${channelsProcessed}
+                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
                 
                 *Використано комбіновану стратегію: bulk delete + індивідуальне видалення*
             `)
@@ -451,6 +454,7 @@ client.on('interactionCreate', async (interaction) => {
                 - Повідомлення новіші за 14 днів (швидко)
                 - Повідомлення старіші за 14 днів (повільно)
                 
+                **Область:** ${targetChannel ? `<#${targetChannel.id}>` : 'Всі канали'}
                 **Процес може зайняти дуже багато часу!**
                 
                 Продовжити?
