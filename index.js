@@ -30,7 +30,7 @@ const client = new Client({
     ]
 });
 
-async function cleanUserMessagesNEW(interaction, targetUserId, channelIds = []) {
+async function cleanUserMessages(interaction, targetUserId, channelId = null) {
     try {
         await interaction.deferReply({ flags: [4096] });
         
@@ -43,35 +43,26 @@ async function cleanUserMessagesNEW(interaction, targetUserId, channelIds = []) 
             });
         }
 
-        console.log(`CLEAN: received channelIds = ${JSON.stringify(channelIds)}`);
-        console.log(`CLEAN: channelIds length = ${channelIds.length}`);
-
         let deletedCount = 0;
         let channelsProcessed = 0;
-        const channels = channelIds.length > 0 ? 
-            channelIds.map(id => guild.channels.cache.get(id)).filter(Boolean) : 
+        const channels = channelId ? 
+            [guild.channels.cache.get(channelId)] : 
             guild.channels.cache.filter(channel => 
                 channel.isTextBased() && 
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
             ).values();
 
-        const channelsArray = Array.from(channels);
-        console.log(`CLEAN: processing ${channelsArray.length} channels`);
-        console.log(`CLEAN: channel names: ${channelsArray.map(c => c.name).join(', ')}`);
-
         const progressEmbed = new EmbedBuilder()
             .setColor('#FFD700')
             .setTitle('Швидке видалення повідомлень...')
-            .setDescription(`Початок видалення повідомлень користувача **${targetUser.tag}** (тільки < 14 днів)${channelIds.length > 0 ? ` в каналах: ${channelIds.map(id => `<#${id}>`).join(', ')}` : ' у всіх каналах'}`);
+            .setDescription(`Початок видалення повідомлень користувача **${targetUser.tag}** (тільки < 14 днів)${channelId ? ` в каналі <#${channelId}>` : ' у всіх каналах'}`);
         
         await interaction.editReply({ embeds: [progressEmbed] });
 
         const fourteenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
 
-        for (const channel of channelsArray) {
+        for (const channel of channels) {
             if (!channel || !channel.isTextBased()) continue;
-            
-            console.log(`CLEAN: processing channel ${channel.name} (${channel.id})`);
             
             try {
                 const permissions = channel.permissionsFor(guild.members.me);
@@ -122,7 +113,7 @@ async function cleanUserMessagesNEW(interaction, targetUserId, channelIds = []) 
 
                     lastMessageId = messages.last().id;
                     
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
 
                 if (channelDeleted > 0) {
@@ -142,7 +133,7 @@ async function cleanUserMessagesNEW(interaction, targetUserId, channelIds = []) 
                 **Користувач:** ${targetUser.tag} (${targetUser.id})
                 **Видалено повідомлень:** ${deletedCount}
                 **Оброблено каналів:** ${channelsProcessed}
-                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
+                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
                 
                 *Використано bulk delete API (тільки повідомлення < 14 днів)*
             `)
@@ -164,7 +155,7 @@ async function cleanUserMessagesNEW(interaction, targetUserId, channelIds = []) 
     }
 }
 
-async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = []) {
+async function cleanAllUserMessages(interaction, targetUserId, channelId = null) {
     try {
         const guild = interaction.guild;
         const targetUser = await client.users.fetch(targetUserId).catch(() => null);
@@ -175,24 +166,20 @@ async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = [
             });
         }
 
-        console.log(`CLEANALL: channelIds = ${JSON.stringify(channelIds)}`);
-
         let deletedCount = 0;
         let channelsProcessed = 0;
         let oldMessagesCount = 0;
-        const channels = channelIds.length > 0 ? 
-            channelIds.map(id => guild.channels.cache.get(id)).filter(Boolean) : 
+        const channels = channelId ? 
+            [guild.channels.cache.get(channelId)] : 
             guild.channels.cache.filter(channel => 
                 channel.isTextBased() && 
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
             ).values();
 
-        console.log(`CLEANALL: processing ${Array.from(channels).length} channels`);
-
         const progressEmbed = new EmbedBuilder()
             .setColor('#FF6B35')
             .setTitle('Повне видалення повідомлень...')
-            .setDescription(`Початок видалення ВСІХ повідомлень користувача **${targetUser.tag}** (включаючи старіші за 14 днів)${channelIds.length > 0 ? ` в каналах: ${channelIds.map(id => `<#${id}>`).join(', ')}` : ' у всіх каналах'}\n**Це може зайняти багато часу!**`);
+            .setDescription(`Початок видалення ВСІХ повідомлень користувача **${targetUser.tag}** (включаючи старіші за 14 днів)${channelId ? ` в каналі <#${channelId}>` : ' у всіх каналах'}\n**Це може зайняти багато часу!**`);
         
         await interaction.editReply({ embeds: [progressEmbed] });
 
@@ -248,7 +235,7 @@ async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = [
                                 channelOldDeleted++;
                                 oldMessagesCount++;
                                 
-                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                await new Promise(resolve => setTimeout(resolve, 1500));
                             } catch (deleteError) {
                                 console.error(`Помилка видалення старого повідомлення: ${deleteError.message}`);
                             }
@@ -257,7 +244,7 @@ async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = [
 
                     lastMessageId = messages.last().id;
                     
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
 
                     if (deletedCount % 50 === 0 && deletedCount > 0) {
                         const updateEmbed = new EmbedBuilder()
@@ -268,7 +255,7 @@ async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = [
                                 **Видалено:** ${deletedCount} повідомлень
                                 **Старих повідомлень:** ${oldMessagesCount}
                                 **Поточний канал:** ${channel.name}
-                                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
+                                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
                                 
                                 *Процес триває...*
                             `);
@@ -296,7 +283,7 @@ async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = [
                 **Старих повідомлень (>14 днів):** ${oldMessagesCount}
                 **Нових повідомлень (<14 днів):** ${deletedCount - oldMessagesCount}
                 **Оброблено каналів:** ${channelsProcessed}
-                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
+                **Область:** ${channelId ? `<#${channelId}>` : 'Всі канали'}
                 
                 *Використано комбіновану стратегію: bulk delete + індивідуальне видалення*
             `)
@@ -350,9 +337,9 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addStringOption(option =>
-            option.setName('channelids')
-                .setDescription('ID каналів через пробіл. Приклад: 123456789 987654321. Пусто = всі канали')
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Конкретний канал (якщо не вказано - всі канали)')
                 .setRequired(false)
         ),
     
@@ -364,9 +351,9 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addStringOption(option =>
-            option.setName('channelids')
-                .setDescription('ID каналів через пробіл. Приклад: 123456789 987654321. Пусто = всі канали')
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Конкретний канал (якщо не вказано - всі канали)')
                 .setRequired(false)
         ),
     
@@ -378,42 +365,20 @@ const commands = [
 client.once('ready', async () => {
     console.log(`Message Cleaner Bot ${client.user.tag} готовий!`);
     
-    console.log('Видалення старих команд...');
-    await client.application.commands.set([]);
-    
-    console.log('Реєстрація нових команд...');
     try {
         await client.application.commands.set(commands);
-        console.log('Нові slash команди зареєстровані');
-        
-        const registeredCommands = await client.application.commands.fetch();
-        console.log('Зареєстровані команди:');
-        registeredCommands.forEach(cmd => {
-            console.log(`- ${cmd.name}: ${cmd.options.length} параметрів`);
-            cmd.options.forEach(opt => {
-                console.log(`  * ${opt.name} (${opt.type})`);
-            });
-        });
-        
+        console.log('Slash команди зареєстровані');
     } catch (error) {
         console.error('Помилка реєстрації команд:', error);
     }
     
-    client.user.setActivity('Очищення повідомлень v2.0', { type: 'WATCHING' });
+    client.user.setActivity('Очищення повідомлень', { type: 'WATCHING' });
     client.user.setStatus('online');
 });
 
 client.on('interactionCreate', async (interaction) => {
-    console.log(`RAW INTERACTION: ${interaction.type}, command: ${interaction.commandName}`);
-    console.log(`Is chat input: ${interaction.isChatInputCommand()}`);
-    
     if (!interaction.isChatInputCommand()) return;
 
-    console.log(`=== INTERACTION START ===`);
-    console.log(`Command: ${interaction.commandName}`);
-    console.log(`User: ${interaction.user.tag}`);
-    console.log(`Options data:`, interaction.options.data);
-    
     const hasManageMessages = interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages);
     const isAllowedUser = config.allowedUsers.includes(interaction.user.id);
     
@@ -456,31 +421,7 @@ client.on('interactionCreate', async (interaction) => {
     
     else if (commandName === 'cleanall') {
         const targetUserId = interaction.options.getString('userid');
-        const channelsInput = interaction.options.getString('channels');
-        
-        let channelIds = [];
-        if (channelsInput) {
-            const inputIds = channelsInput.split(',').map(id => id.trim()).filter(id => /^\d+$/.test(id) && id.length >= 7);
-            
-            console.log(`CLEAN: inputIds from string = ${JSON.stringify(inputIds)}`);
-            
-            for (const id of inputIds) {
-                const channel = interaction.guild.channels.cache.get(id);
-                if (channel && channel.isTextBased()) {
-                    channelIds.push(id);
-                    console.log(`CLEAN: added valid channel ${id} (${channel.name})`);
-                } else {
-                    console.log(`CLEAN: channel ${id} not found or not text-based`);
-                }
-            }
-            
-            if (inputIds.length > 0 && channelIds.length === 0) {
-                return await interaction.reply({
-                    content: 'Жоден з вказаних каналів не знайдено на цьому сервері або вони не є текстовими каналами!',
-                    flags: [4096]
-                });
-            }
-        }
+        const targetChannel = interaction.options.getChannel('channel');
         
         if (!/^\d{17,19}$/.test(targetUserId)) {
             return await interaction.reply({
@@ -513,7 +454,7 @@ client.on('interactionCreate', async (interaction) => {
                 - Повідомлення новіші за 14 днів (швидко)
                 - Повідомлення старіші за 14 днів (повільно)
                 
-                **Область:** ${channelIds.length > 0 ? channelIds.map(id => `<#${id}>`).join(', ') : 'Всі канали'}
+                **Область:** ${targetChannel ? `<#${targetChannel.id}>` : 'Всі канали'}
                 **Процес може зайняти дуже багато часу!**
                 
                 Продовжити?
@@ -526,7 +467,7 @@ client.on('interactionCreate', async (interaction) => {
         
         await new Promise(resolve => setTimeout(resolve, 3000));
         
-        await cleanAllUserMessages(interaction, targetUserId, channelIds);
+        await cleanAllUserMessages(interaction, targetUserId, targetChannel?.id);
     }
     
     else if (commandName === 'clear-info') {
@@ -537,11 +478,11 @@ client.on('interactionCreate', async (interaction) => {
             .addFields(
                 {
                     name: '/clean',
-                    value: '**Швидке видалення** повідомлень молодших за 14 днів\n- Використовує bulk delete API\n- Дуже швидко\n- Обмеження Discord API\n- Можна вибрати до 10 каналів'
+                    value: '**Швидке видалення** повідомлень молодших за 14 днів\n- Використовує bulk delete API\n- Дуже швидко\n- Обмеження Discord API'
                 },
                 {
                     name: '/cleanall',
-                    value: '**Повне видалення** ВСІХ повідомлень користувача\n- Видаляє і старі (>14 днів), і нові (<14 днів)\n- Повільно для старих повідомлень\n- Може зайняти багато часу\n- Можна вибрати до 10 каналів'
+                    value: '**Повне видалення** ВСІХ повідомлень користувача\n- Видаляє і старі (>14 днів), і нові (<14 днів)\n- Повільно для старих повідомлень\n- Може зайняти багато часу'
                 },
                 {
                     name: '/clear-info',
@@ -557,7 +498,7 @@ client.on('interactionCreate', async (interaction) => {
                 },
                 {
                     name: 'Рекомендації',
-                    value: '- Використовуйте `/clean` для швидкого видалення\n- Використовуйте `/cleanall` тільки якщо потрібно видалити старі повідомлення\n- `/cleanall` може працювати годинами для активних користувачів\n- Можна вибрати до 10 каналів одночасно\n- Пусті параметри каналів ігноруються\n- Без вибору каналів = всі канали'
+                    value: '- Використовуйте `/clean` для швидкого видалення\n- Використовуйте `/cleanall` тільки якщо потрібно видалити старі повідомлення\n- `/cleanall` може працювати годинами для активних користувачів'
                 }
             )
             .setTimestamp();
@@ -566,17 +507,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.on('error', (error) => {
-    console.error('Discord client error:', error);
-});
-
-client.on('warn', (warning) => {
-    console.warn('Discord client warning:', warning);
-});
-
-client.on('disconnect', (event) => {
-    console.log('Discord client disconnected:', event);
-});
+client.on('error', console.error);
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Необроблена помилка Promise:', reason);
@@ -584,19 +515,6 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error) => {
     console.error('Необроблена помилка:', error);
-    process.exit(1);
-});
-
-process.on('SIGTERM', () => {
-    console.log('Отримано SIGTERM, завершуємо роботу...');
-    client.destroy();
-    process.exit(0);
-});
-
-process.on('SIGINT', () => {
-    console.log('Отримано SIGINT, завершуємо роботу...');
-    client.destroy();
-    process.exit(0);
 });
 
 app.listen(config.port, () => {
