@@ -43,6 +43,8 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
             });
         }
 
+        console.log(`CLEAN: channelIds = ${JSON.stringify(channelIds)}`);
+
         let deletedCount = 0;
         let channelsProcessed = 0;
         const channels = channelIds.length > 0 ? 
@@ -51,6 +53,8 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
                 channel.isTextBased() && 
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
             ).values();
+
+        console.log(`CLEAN: processing ${Array.from(channels).length} channels`);
 
         const progressEmbed = new EmbedBuilder()
             .setColor('#FFD700')
@@ -166,6 +170,8 @@ async function cleanAllUserMessages(interaction, targetUserId, channelIds = []) 
             });
         }
 
+        console.log(`CLEANALL: channelIds = ${JSON.stringify(channelIds)}`);
+
         let deletedCount = 0;
         let channelsProcessed = 0;
         let oldMessagesCount = 0;
@@ -175,6 +181,8 @@ async function cleanAllUserMessages(interaction, targetUserId, channelIds = []) 
                 channel.isTextBased() && 
                 channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.ReadMessageHistory)
             ).values();
+
+        console.log(`CLEANALL: processing ${Array.from(channels).length} channels`);
 
         const progressEmbed = new EmbedBuilder()
             .setColor('#FF6B35')
@@ -423,9 +431,24 @@ client.on('interactionCreate', async (interaction) => {
         const targetUserId = interaction.options.getString('userid');
         const channelsInput = interaction.options.getString('channels');
         
-        const channelIds = channelsInput ? 
-            channelsInput.split(',').map(id => id.trim()).filter(id => /^\d{17,19}$/.test(id)) : 
-            [];
+        let channelIds = [];
+        if (channelsInput) {
+            const inputIds = channelsInput.split(',').map(id => id.trim()).filter(id => /^\d{17,19}$/.test(id));
+            
+            for (const id of inputIds) {
+                const channel = interaction.guild.channels.cache.get(id);
+                if (channel && channel.isTextBased()) {
+                    channelIds.push(id);
+                }
+            }
+            
+            if (inputIds.length > 0 && channelIds.length === 0) {
+                return await interaction.reply({
+                    content: 'Жоден з вказаних каналів не знайдено на цьому сервері або вони не є текстовими каналами!',
+                    flags: [4096]
+                });
+            }
+        }
         
         if (!/^\d{17,19}$/.test(targetUserId)) {
             return await interaction.reply({
