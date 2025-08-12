@@ -117,7 +117,7 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
 
                     lastMessageId = messages.last().id;
                     
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
 
                 if (channelDeleted > 0) {
@@ -243,7 +243,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelIds = []) 
                                 channelOldDeleted++;
                                 oldMessagesCount++;
                                 
-                                await new Promise(resolve => setTimeout(resolve, 1500));
+                                await new Promise(resolve => setTimeout(resolve, 1000));
                             } catch (deleteError) {
                                 console.error(`Помилка видалення старого повідомлення: ${deleteError.message}`);
                             }
@@ -252,7 +252,7 @@ async function cleanAllUserMessages(interaction, targetUserId, channelIds = []) 
 
                     lastMessageId = messages.last().id;
                     
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
                     if (deletedCount % 50 === 0 && deletedCount > 0) {
                         const updateEmbed = new EmbedBuilder()
@@ -345,9 +345,54 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addStringOption(option =>
-            option.setName('channels')
-                .setDescription('ID каналів через кому (без пробілів). Приклад: 123,456,789. Пусто = всі канали')
+        .addChannelOption(option =>
+            option.setName('channel1')
+                .setDescription('Канал 1')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel2')
+                .setDescription('Канал 2')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel3')
+                .setDescription('Канал 3')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel4')
+                .setDescription('Канал 4')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel5')
+                .setDescription('Канал 5')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel6')
+                .setDescription('Канал 6')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel7')
+                .setDescription('Канал 7')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel8')
+                .setDescription('Канал 8')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel9')
+                .setDescription('Канал 9')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel10')
+                .setDescription('Канал 10')
                 .setRequired(false)
         ),
     
@@ -359,9 +404,54 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addStringOption(option =>
-            option.setName('channels')
-                .setDescription('ID каналів через кому (без пробілів). Приклад: 123,456,789. Пусто = всі канали')
+        .addChannelOption(option =>
+            option.setName('channel1')
+                .setDescription('Канал 1')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel2')
+                .setDescription('Канал 2')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel3')
+                .setDescription('Канал 3')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel4')
+                .setDescription('Канал 4')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel5')
+                .setDescription('Канал 5')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel6')
+                .setDescription('Канал 6')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel7')
+                .setDescription('Канал 7')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel8')
+                .setDescription('Канал 8')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel9')
+                .setDescription('Канал 9')
+                .setRequired(false)
+        )
+        .addChannelOption(option =>
+            option.setName('channel10')
+                .setDescription('Канал 10')
                 .setRequired(false)
         ),
     
@@ -433,12 +523,17 @@ client.on('interactionCreate', async (interaction) => {
         
         let channelIds = [];
         if (channelsInput) {
-            const inputIds = channelsInput.split(',').map(id => id.trim()).filter(id => /^\d{17,19}$/.test(id));
+            const inputIds = channelsInput.split(',').map(id => id.trim()).filter(id => /^\d+$/.test(id) && id.length >= 7);
+            
+            console.log(`CLEAN: inputIds from string = ${JSON.stringify(inputIds)}`);
             
             for (const id of inputIds) {
                 const channel = interaction.guild.channels.cache.get(id);
                 if (channel && channel.isTextBased()) {
                     channelIds.push(id);
+                    console.log(`CLEAN: added valid channel ${id} (${channel.name})`);
+                } else {
+                    console.log(`CLEAN: channel ${id} not found or not text-based`);
                 }
             }
             
@@ -505,11 +600,11 @@ client.on('interactionCreate', async (interaction) => {
             .addFields(
                 {
                     name: '/clean',
-                    value: '**Швидке видалення** повідомлень молодших за 14 днів\n- Використовує bulk delete API\n- Дуже швидко\n- Обмеження Discord API\n- Параметр channels: ID каналів через кому'
+                    value: '**Швидке видалення** повідомлень молодших за 14 днів\n- Використовує bulk delete API\n- Дуже швидко\n- Обмеження Discord API\n- Можна вибрати до 10 каналів'
                 },
                 {
                     name: '/cleanall',
-                    value: '**Повне видалення** ВСІХ повідомлень користувача\n- Видаляє і старі (>14 днів), і нові (<14 днів)\n- Повільно для старих повідомлень\n- Може зайняти багато часу\n- Параметр channels: ID каналів через кому'
+                    value: '**Повне видалення** ВСІХ повідомлень користувача\n- Видаляє і старі (>14 днів), і нові (<14 днів)\n- Повільно для старих повідомлень\n- Може зайняти багато часу\n- Можна вибрати до 10 каналів'
                 },
                 {
                     name: '/clear-info',
@@ -525,7 +620,7 @@ client.on('interactionCreate', async (interaction) => {
                 },
                 {
                     name: 'Рекомендації',
-                    value: '- Використовуйте `/clean` для швидкого видалення\n- Використовуйте `/cleanall` тільки якщо потрібно видалити старі повідомлення\n- `/cleanall` може працювати годинами для активних користувачів\n- Формат каналів: `123456789,987654321,555666777` (без пробілів)\n- Пустий параметр channels = всі канали'
+                    value: '- Використовуйте `/clean` для швидкого видалення\n- Використовуйте `/cleanall` тільки якщо потрібно видалити старі повідомлення\n- `/cleanall` може працювати годинами для активних користувачів\n- Можна вибрати до 10 каналів одночасно\n- Пусті параметри каналів ігноруються\n- Без вибору каналів = всі канали'
                 }
             )
             .setTimestamp();
@@ -534,7 +629,17 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.on('error', console.error);
+client.on('error', (error) => {
+    console.error('Discord client error:', error);
+});
+
+client.on('warn', (warning) => {
+    console.warn('Discord client warning:', warning);
+});
+
+client.on('disconnect', (event) => {
+    console.log('Discord client disconnected:', event);
+});
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Необроблена помилка Promise:', reason);
@@ -542,6 +647,19 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error) => {
     console.error('Необроблена помилка:', error);
+    process.exit(1);
+});
+
+process.on('SIGTERM', () => {
+    console.log('Отримано SIGTERM, завершуємо роботу...');
+    client.destroy();
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('Отримано SIGINT, завершуємо роботу...');
+    client.destroy();
+    process.exit(0);
 });
 
 app.listen(config.port, () => {
