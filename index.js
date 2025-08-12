@@ -30,7 +30,7 @@ const client = new Client({
     ]
 });
 
-async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
+async function cleanUserMessagesNEW(interaction, targetUserId, channelIds = []) {
     try {
         await interaction.deferReply({ flags: [4096] });
         
@@ -164,7 +164,7 @@ async function cleanUserMessages(interaction, targetUserId, channelIds = []) {
     }
 }
 
-async function cleanAllUserMessages(interaction, targetUserId, channelIds = []) {
+async function cleanAllUserMessagesNEW(interaction, targetUserId, channelIds = []) {
     try {
         const guild = interaction.guild;
         const targetUser = await client.users.fetch(targetUserId).catch(() => null);
@@ -350,54 +350,9 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addChannelOption(option =>
-            option.setName('channel1')
-                .setDescription('Канал 1')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel2')
-                .setDescription('Канал 2')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel3')
-                .setDescription('Канал 3')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel4')
-                .setDescription('Канал 4')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel5')
-                .setDescription('Канал 5')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel6')
-                .setDescription('Канал 6')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel7')
-                .setDescription('Канал 7')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel8')
-                .setDescription('Канал 8')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel9')
-                .setDescription('Канал 9')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel10')
-                .setDescription('Канал 10')
+        .addStringOption(option =>
+            option.setName('channelids')
+                .setDescription('ID каналів через пробіл. Приклад: 123456789 987654321. Пусто = всі канали')
                 .setRequired(false)
         ),
     
@@ -409,54 +364,9 @@ const commands = [
                 .setDescription('ID користувача Discord')
                 .setRequired(true)
         )
-        .addChannelOption(option =>
-            option.setName('channel1')
-                .setDescription('Канал 1')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel2')
-                .setDescription('Канал 2')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel3')
-                .setDescription('Канал 3')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel4')
-                .setDescription('Канал 4')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel5')
-                .setDescription('Канал 5')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel6')
-                .setDescription('Канал 6')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel7')
-                .setDescription('Канал 7')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel8')
-                .setDescription('Канал 8')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel9')
-                .setDescription('Канал 9')
-                .setRequired(false)
-        )
-        .addChannelOption(option =>
-            option.setName('channel10')
-                .setDescription('Канал 10')
+        .addStringOption(option =>
+            option.setName('channelids')
+                .setDescription('ID каналів через пробіл. Приклад: 123456789 987654321. Пусто = всі канали')
                 .setRequired(false)
         ),
     
@@ -494,11 +404,15 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+    console.log(`RAW INTERACTION: ${interaction.type}, command: ${interaction.commandName}`);
+    console.log(`Is chat input: ${interaction.isChatInputCommand()}`);
+    
     if (!interaction.isChatInputCommand()) return;
 
     console.log(`=== INTERACTION START ===`);
     console.log(`Command: ${interaction.commandName}`);
     console.log(`User: ${interaction.user.tag}`);
+    console.log(`Options data:`, interaction.options.data);
     
     const hasManageMessages = interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages);
     const isAllowedUser = config.allowedUsers.includes(interaction.user.id);
