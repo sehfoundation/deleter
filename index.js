@@ -468,20 +468,38 @@ const commands = [
 client.once('ready', async () => {
     console.log(`Message Cleaner Bot ${client.user.tag} готовий!`);
     
+    console.log('Видалення старих команд...');
+    await client.application.commands.set([]);
+    
+    console.log('Реєстрація нових команд...');
     try {
         await client.application.commands.set(commands);
-        console.log('Slash команди зареєстровані');
+        console.log('Нові slash команди зареєстровані');
+        
+        const registeredCommands = await client.application.commands.fetch();
+        console.log('Зареєстровані команди:');
+        registeredCommands.forEach(cmd => {
+            console.log(`- ${cmd.name}: ${cmd.options.length} параметрів`);
+            cmd.options.forEach(opt => {
+                console.log(`  * ${opt.name} (${opt.type})`);
+            });
+        });
+        
     } catch (error) {
         console.error('Помилка реєстрації команд:', error);
     }
     
-    client.user.setActivity('Очищення повідомлень', { type: 'WATCHING' });
+    client.user.setActivity('Очищення повідомлень v2.0', { type: 'WATCHING' });
     client.user.setStatus('online');
 });
 
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
+    console.log(`=== INTERACTION START ===`);
+    console.log(`Command: ${interaction.commandName}`);
+    console.log(`User: ${interaction.user.tag}`);
+    
     const hasManageMessages = interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages);
     const isAllowedUser = config.allowedUsers.includes(interaction.user.id);
     
